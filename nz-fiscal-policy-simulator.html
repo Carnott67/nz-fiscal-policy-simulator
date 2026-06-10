@@ -1,0 +1,1690 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NZ Fiscal Policy Simulator</title>
+  <style>
+    :root {
+      --ink: #101820;
+      --muted: #5f6b73;
+      --paper: #f4f6f6;
+      --panel: #ffffff;
+      --line: #d8dfdf;
+      --blue: #2f80ed;
+      --orange: #f4a340;
+      --green: #11824d;
+      --red: #c63732;
+      --teal: #006d70;
+      --purple: #6a55a8;
+      --gold: #a96e12;
+      --shadow: 0 10px 26px rgba(16, 24, 32, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+    }
+
+    button, input { font: inherit; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      padding: 14px 22px;
+    }
+
+    .topbar {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.15;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .year-pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #f8fbfb;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .tab {
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: #fbfbfb;
+      padding: 17px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .tab:last-child { border-right: 0; }
+
+    .tab[aria-selected="true"] {
+      background: #fff;
+      box-shadow: inset 0 -3px 0 var(--teal);
+      font-weight: 800;
+    }
+
+    main {
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 18px 22px 26px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+
+    .panel-heading {
+      padding: 13px 14px 10px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-heading h2,
+    .panel-heading h3 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .panel-body { padding: 14px; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .timeline {
+      margin: 0 0 16px;
+      padding: 14px 14px 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .track {
+      position: relative;
+      height: 12px;
+      background: #e9eeee;
+      border: 1px solid #d1dada;
+      border-radius: 999px;
+    }
+
+    .track-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0;
+      background: #9dd4ca;
+      border-radius: 999px;
+    }
+
+    .track-thumb {
+      position: absolute;
+      top: 50%;
+      width: 18px;
+      height: 28px;
+      border-radius: 5px;
+      background: #b9c1c4;
+      transform: translate(-50%, -50%);
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,.12);
+    }
+
+    .quarter-labels {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .quarter-labels span.active {
+      color: var(--teal);
+      font-weight: 800;
+    }
+
+    .headquarters-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 370px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    canvas {
+      width: 100%;
+      display: block;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .main-chart { height: 320px; }
+    .component-chart { height: 290px; }
+    .adas-chart { height: 520px; }
+
+    .newspapers {
+      display: grid;
+      gap: 16px;
+    }
+
+    .paper-card {
+      border: 1px solid #d5d0ca;
+      background: #fff;
+      border-radius: 4px;
+      min-height: 220px;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .paper-card.fiscal {
+      background:
+        linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.78)),
+        repeating-linear-gradient(35deg, #ead0aa 0, #ead0aa 7px, #f3dfc2 7px, #f3dfc2 14px);
+    }
+
+    .masthead {
+      border-top: 8px solid #ed6268;
+      border-bottom: 1px solid #eadada;
+      text-align: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 800;
+      font-size: 33px;
+      color: #4a4a4a;
+      padding: 9px 4px 7px;
+      line-height: 1;
+    }
+
+    .paper-card.fiscal .masthead {
+      border-top-color: #363636;
+      color: #4b3b28;
+      font-size: 28px;
+    }
+
+    .paper-kicker {
+      margin: 8px 0 6px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .headline {
+      margin: 8px 0 10px;
+      font-size: 25px;
+      line-height: 1.15;
+      font-weight: 800;
+    }
+
+    .story {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 12px;
+      color: #48535a;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .controls-area {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px minmax(0, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .policy-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .policy-card label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    output {
+      color: var(--teal);
+      font-weight: 800;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--teal);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .commit-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      place-items: stretch;
+      box-shadow: var(--shadow);
+    }
+
+    .commit-card strong {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .preview-number {
+      text-align: center;
+      font-size: 25px;
+      line-height: 1.05;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px 14px;
+      min-height: 44px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .button.primary {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #fff;
+    }
+
+    .button:disabled {
+      cursor: not-allowed;
+      opacity: .62;
+    }
+
+    .result-strip {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 86px;
+      display: grid;
+      align-content: space-between;
+      gap: 6px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .metric .value {
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric .note {
+      font-size: 12px;
+      line-height: 1.25;
+      font-weight: 700;
+    }
+
+    .good { color: var(--green); }
+    .watch { color: var(--gold); }
+    .risk { color: var(--red); }
+    .info { color: var(--blue); }
+
+    .components-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .formula-band {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: center;
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .adas-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 370px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .explain-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .explain-list li {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+      line-height: 1.4;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .explain-list strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .glossary-grid {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .term-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .term {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 6px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .term[aria-pressed="true"] {
+      border-color: var(--teal);
+      box-shadow: inset 4px 0 0 var(--teal);
+      background: #f0f8f7;
+      font-weight: 800;
+    }
+
+    .definition {
+      min-height: 330px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .intro {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: rgba(244, 246, 246, .98);
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    .intro[hidden] { display: none; }
+
+    .intro-card {
+      width: min(960px, 100%);
+      max-height: calc(100vh - 44px);
+      overflow: auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(16, 24, 32, .18);
+      padding: 26px;
+      text-align: center;
+      display: grid;
+      gap: 12px;
+    }
+
+    .intro-card h2 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.2;
+    }
+
+    .intro-card p {
+      margin: 0 auto;
+      max-width: 780px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .intro-tools {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      text-align: left;
+    }
+
+    .intro-tools div {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fafcfc;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .intro-card > .button {
+      position: sticky;
+      bottom: 0;
+      width: min(220px, 100%);
+      justify-self: center;
+    }
+
+    @media (max-width: 1160px) {
+      .headquarters-grid,
+      .adas-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .newspapers {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 860px) {
+      header { padding: 14px; }
+      main { padding: 14px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .tabs { grid-template-columns: repeat(2, 1fr); }
+      .chart-grid,
+      .components-grid,
+      .controls-area,
+      .result-strip,
+      .newspapers,
+      .intro-tools,
+      .glossary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .quarter-labels {
+        font-size: 11px;
+      }
+
+      .main-chart,
+      .component-chart,
+      .adas-chart {
+        height: 300px;
+      }
+
+      .intro-card {
+        padding: 22px;
+      }
+
+      .intro-card h2 { font-size: 24px; }
+      .intro-card p { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="topbar">
+        <div>
+          <h1>NZ Fiscal Policy Simulator</h1>
+          <p class="subtitle">Set fiscal policy for each quarter, commit the decision, then reveal how aggregate demand, output, inflation pressure, and the operating balance respond.</p>
+        </div>
+        <div class="year-pill" id="mandateStatus">Mandate: Year 1, Q2 of 16</div>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Simulator views">
+      <button class="tab" type="button" data-tab="headquarters" aria-selected="true">Headquarters</button>
+      <button class="tab" type="button" data-tab="components" aria-selected="false">AD Components</button>
+      <button class="tab" type="button" data-tab="adas" aria-selected="false">AD/AS Model</button>
+      <button class="tab" type="button" data-tab="glossary" aria-selected="false">Glossary</button>
+    </nav>
+
+    <main>
+      <section class="timeline" aria-label="Quarter timeline">
+        <div class="track">
+          <div class="track-fill" id="trackFill"></div>
+          <div class="track-thumb" id="trackThumb"></div>
+        </div>
+        <div class="quarter-labels" id="quarterLabels"></div>
+      </section>
+
+      <section class="screen active" id="headquarters">
+        <div class="headquarters-grid">
+          <div>
+            <div class="chart-grid">
+              <section class="panel">
+                <div class="panel-heading">
+                  <h2>Output / Real GDP</h2>
+                  <span class="hint">NZ$b, quarterly index</span>
+                </div>
+                <div class="panel-body">
+                  <canvas class="main-chart" id="outputChart" width="640" height="360"></canvas>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-heading">
+                  <h2>Govt Budget</h2>
+                  <span class="hint">future point is fiscal only</span>
+                </div>
+                <div class="panel-body">
+                  <canvas class="main-chart" id="budgetChart" width="640" height="360"></canvas>
+                </div>
+              </section>
+            </div>
+
+            <div class="result-strip">
+              <article class="metric">
+                <div class="label">Latest growth</div>
+                <div class="value" id="growthValue">0.0%</div>
+                <div class="note" id="growthNote">baseline</div>
+              </article>
+              <article class="metric">
+                <div class="label">Operating balance</div>
+                <div class="value" id="balanceValue">$0.0b</div>
+                <div class="note" id="balanceNote">actual</div>
+              </article>
+              <article class="metric">
+                <div class="label">Inflation pressure</div>
+                <div class="value" id="inflationValue">0.0%</div>
+                <div class="note" id="inflationNote">price level change</div>
+              </article>
+              <article class="metric">
+                <div class="label">Output gap</div>
+                <div class="value" id="gapValue">0.0%</div>
+                <div class="note" id="gapNote">of potential GDP</div>
+              </article>
+            </div>
+
+            <div class="controls-area">
+              <section class="policy-card">
+                <label for="directTax">
+                  <span>Direct tax</span>
+                  <output id="directTaxOut">22.0% of GDP</output>
+                </label>
+                <input id="directTax" type="range" min="16" max="28" step="0.5" value="22">
+                <div class="hint">Income and company taxes. Lowering direct tax mainly raises disposable income and can support investment.</div>
+
+                <label for="indirectTax">
+                  <span>Indirect tax / GST</span>
+                  <output id="indirectTaxOut">8.0% of GDP</output>
+                </label>
+                <input id="indirectTax" type="range" min="5" max="12" step="0.5" value="8">
+                <div class="hint">GST and excise-style taxes. Lowering indirect tax mainly supports consumption and lowers price pressure.</div>
+              </section>
+
+              <section class="commit-card">
+                <strong id="decisionLabel">Policy for Y1 Q2</strong>
+                <div class="preview-number" id="previewBalance">$0.0b</div>
+                <div class="hint" id="previewText">Projected operating balance before the economy reacts.</div>
+                <button class="button primary" id="commitButton" type="button">OK - set policy</button>
+                <button class="button" id="resetButton" type="button">Restart simulation</button>
+              </section>
+
+              <section class="policy-card">
+                <label for="serviceSpend">
+                  <span>Public services</span>
+                  <output id="serviceSpendOut">$17.0b</output>
+                </label>
+                <input id="serviceSpend" type="range" min="13" max="22" step="0.5" value="17">
+                <div class="hint">Teachers, nurses, police, public agencies, and day-to-day services. Fast direct effect on G and AD.</div>
+
+                <label for="infraSpend">
+                  <span>Infrastructure investment</span>
+                  <output id="infraSpendOut">$6.0b</output>
+                </label>
+                <input id="infraSpend" type="range" min="3" max="12" step="0.5" value="6">
+                <div class="hint">Transport, schools, hospitals, water, energy, and resilience projects. Raises G now and can ease SRAS pressure over time.</div>
+              </section>
+            </div>
+          </div>
+
+          <aside class="newspapers" aria-label="Quarter news">
+            <article class="paper-card">
+              <div class="masthead">THE NZ ECONOMIST</div>
+              <div class="paper-kicker" id="macroKicker">Latest quarter</div>
+              <div class="headline" id="macroHeadline">Economy ready for first policy decision</div>
+              <div class="story">
+                <p id="macroLead">The government is about to set fiscal policy for the next quarter. GDP, inflation pressure, and tax revenue will update only after the policy is committed.</p>
+                <p id="macroDetail">Students should compare the fiscal preview with the eventual output and price-level result.</p>
+              </div>
+            </article>
+
+            <article class="paper-card fiscal">
+              <div class="masthead">THE FISCAL TIMES</div>
+              <div class="paper-kicker">Operating balance watch</div>
+              <div class="headline" id="fiscalHeadline">Budget position depends on output</div>
+              <div class="story">
+                <p id="fiscalLead">The preview uses the current level of GDP. Once the quarter is played, tax revenue changes with the economy.</p>
+                <p id="fiscalDetail">A recession can shrink tax revenue even if the tax rate stays unchanged.</p>
+              </div>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen" id="components">
+        <div class="formula-band">Gross Domestic Product (Y) = Consumption (C) + Investment (I) + Government Spending (G) + Net Exports (NX)</div>
+        <div class="components-grid">
+          <section class="panel">
+            <div class="panel-heading"><h2>Consumption (C)</h2><span class="hint">affected by income and tax</span></div>
+            <div class="panel-body"><canvas class="component-chart" id="cChart" width="620" height="330"></canvas></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><h2>Investment (I)</h2><span class="hint">affected by confidence and capacity</span></div>
+            <div class="panel-body"><canvas class="component-chart" id="iChart" width="620" height="330"></canvas></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><h2>Government Spending (G)</h2><span class="hint">your policy decision</span></div>
+            <div class="panel-body"><canvas class="component-chart" id="gChart" width="620" height="330"></canvas></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><h2>Net Exports (NX)</h2><span class="hint">affected by export shocks and imports</span></div>
+            <div class="panel-body"><canvas class="component-chart" id="nxChart" width="620" height="330"></canvas></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="screen" id="adas">
+        <div class="adas-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>AD/AS Model</h2>
+              <span class="hint">previous curve is dotted; current curve is solid</span>
+            </div>
+            <div class="panel-body">
+              <canvas class="adas-chart" id="adasChart" width="900" height="560"></canvas>
+            </div>
+          </section>
+
+          <aside class="panel">
+            <div class="panel-heading"><h2>Model Interpretation</h2></div>
+            <div class="panel-body">
+              <ul class="explain-list">
+                <li><strong id="zoneTitle">Current zone</strong><span id="zoneText">The economy begins close to long-run aggregate supply.</span></li>
+                <li><strong>Fiscal policy channel</strong><span id="fiscalChannel">Changing T and G shifts aggregate demand before the outcome is revealed.</span></li>
+                <li><strong>Shock channel</strong><span id="shockChannel">Demand shocks shift AD. Supply shocks move SRAS and change inflation pressure.</span></li>
+                <li><strong>Assessment link</strong><span id="assessmentLink">Explain whether the AD shift mainly changes real output or the price level.</span></li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen" id="glossary">
+        <div class="glossary-grid">
+          <section class="panel">
+            <div class="panel-heading"><h2>Terms</h2></div>
+            <div class="panel-body term-list" id="termList"></div>
+          </section>
+          <section class="definition" id="definition">Choose a term on the left to see its definition.</section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <section class="intro" id="intro">
+    <div class="intro-card">
+      <h2>Welcome to the NZ Fiscal Policy Simulator</h2>
+      <p>You are the Minister of Finance for New Zealand. Each quarter, set direct tax, indirect tax, public services, and infrastructure investment. The simulator will show the fiscal preview first. Once you press OK, shocks and policy flow through aggregate demand and the AD/AS model.</p>
+      <div class="intro-tools">
+        <div><strong>Direct tax</strong><br>Lowering direct tax increases disposable income and can improve investment incentives, shifting AD right.</div>
+        <div><strong>Indirect tax / GST</strong><br>Lowering indirect tax makes consumption cheaper and can reduce short-run price pressure.</div>
+        <div><strong>Public services</strong><br>Teachers, police, nurses, and other services count as G and raise AD quickly.</div>
+        <div><strong>Infrastructure investment</strong><br>Infrastructure counts as G now and can ease supply pressure over time.</div>
+      </div>
+      <button class="button primary" id="startButton" type="button">OK</button>
+    </div>
+  </section>
+
+  <script>
+    const totalQuarters = 16;
+    const potentialOutput = 100;
+    const neutralDirectTaxRate = 0.22;
+    const neutralIndirectTaxRate = 0.08;
+    const neutralTaxRate = neutralDirectTaxRate + neutralIndirectTaxRate;
+    const neutralServiceSpend = 17;
+    const neutralInfraSpend = 6;
+    const neutralGovSpend = neutralServiceSpend + neutralInfraSpend;
+    const baselineAdLevel = 99.8;
+
+    const shocks = [
+      { headline: "GDP growth starts steady", detail: "No major shock has hit yet.", isShock: false, adShift: 0, srasShift: 0, c: 0, i: 0, nx: 0 },
+      { headline: "Stable conditions", detail: "No new shock. This quarter mainly shows how the chosen fiscal stance affects AD.", isShock: false, adShift: 0, srasShift: -0.1, c: 0, i: 0.1, nx: 0 },
+      { headline: "Households remain cautious", detail: "Higher mortgage costs and weak confidence soften consumption.", isShock: true, adShift: -1.5, srasShift: 0, c: -1.0, i: -0.3, nx: 0 },
+      { headline: "Policy effects play through", detail: "No new shock. Previous decisions and automatic adjustment are the main forces this quarter.", isShock: false, adShift: 0, srasShift: -0.1, c: 0.1, i: 0, nx: 0 },
+      { headline: "Tourism receipts lift services", detail: "Visitor spending improves export earnings and supports retail demand.", isShock: true, adShift: 1.9, srasShift: 0, c: 0.4, i: 0.2, nx: 1.3 },
+      { headline: "Sustainable growth test", detail: "No new shock. The economy has room to show whether fiscal settings are stabilising or overheating demand.", isShock: false, adShift: 0, srasShift: -0.2, c: 0, i: 0.1, nx: 0 },
+      { headline: "Drought cuts dairy production", detail: "Farm output weakens and export receipts fall.", isShock: true, adShift: -3.2, srasShift: 1.2, c: -0.3, i: -0.7, nx: -2.4 },
+      { headline: "Recovery quarter", detail: "No new shock. The economy adjusts after the drought and the policy stance becomes easier to judge.", isShock: false, adShift: 0, srasShift: -0.4, c: 0.1, i: 0.2, nx: 0.2 },
+      { headline: "Imported fuel prices jump", detail: "Petrol and freight costs push SRAS upward.", isShock: true, adShift: -1.1, srasShift: 2.7, c: -0.7, i: -0.4, nx: -0.4 },
+      { headline: "Stabilisation window", detail: "No new shock. Students can test whether to keep stimulus, pull it back, or move toward neutral.", isShock: false, adShift: 0, srasShift: -0.5, c: 0, i: 0.1, nx: 0 },
+      { headline: "Construction sector slows", detail: "Residential building weakens and investment falls.", isShock: true, adShift: -2.8, srasShift: 0, c: -0.4, i: -2.1, nx: 0 },
+      { headline: "Terms of trade improve", detail: "Export prices rise relative to import prices.", isShock: true, adShift: 2.2, srasShift: -0.5, c: 0.4, i: 0.5, nx: 1.6 },
+      { headline: "Balanced-growth quarter", detail: "No new shock. If policy is well judged, output can move closer to LRAS without extra inflation pressure.", isShock: false, adShift: 0, srasShift: -0.2, c: 0.1, i: 0.1, nx: 0 },
+      { headline: "Technology investment lifts capacity", detail: "Business investment improves productivity and eases supply pressure.", isShock: true, adShift: 1.4, srasShift: -1.4, c: 0.2, i: 1.6, nx: 0.2 },
+      { headline: "Sustainability check", detail: "No new shock. The fiscal position and output gap now mostly reflect earlier choices.", isShock: false, adShift: 0, srasShift: -0.1, c: 0, i: 0, nx: 0 },
+      { headline: "Final quarter steadies", detail: "No new shock. Earlier decisions still affect output, prices, and the operating balance.", isShock: false, adShift: 0, srasShift: -0.1, c: 0, i: 0, nx: 0 }
+    ];
+
+    const glossary = {
+      "Aggregate Demand (AD)": "Total planned spending in the economy: C + I + G + NX. Expansionary fiscal policy shifts AD to the right; contractionary fiscal policy shifts AD to the left.",
+      "Aggregate Supply (AS)": "The economy's planned production at different price levels. In this simulator, SRAS is flatter when there is spare capacity and steeper close to LRAS.",
+      "LRAS": "Long-run aggregate supply. It represents productive capacity or potential output. If actual output is below LRAS, there is a recessionary gap.",
+      "Recessionary Gap": "A situation where actual real GDP is below potential output. Expansionary fiscal policy usually has a larger effect on output when the gap is large.",
+      "Inflationary Gap": "A situation where actual real GDP is above potential output. Extra demand is more likely to increase inflation pressure than real output.",
+      "Direct Tax": "Taxes paid directly by households or firms, such as income tax and company tax. In this simulator, direct tax mainly affects consumption through disposable income and investment through after-tax returns.",
+      "Indirect Tax": "Taxes included in prices, such as GST and excise taxes. In this simulator, indirect tax mainly affects consumption costs and short-run price pressure.",
+      "Government Spending": "Government purchases of goods and services. It is the G component of aggregate demand. In this simulator it is split into public services and infrastructure investment.",
+      "Public Services": "Government spending on teachers, nurses, police, public administration, and day-to-day services. It counts as G and has a quick direct effect on AD.",
+      "Infrastructure Investment": "Government spending on transport, schools, hospitals, water, energy, and resilience projects. It counts as G and can also ease SRAS pressure over time.",
+      "Operating Balance": "Tax revenue minus government spending in this simplified model. A negative balance is a deficit.",
+      "Fiscal Stimulus": "Expansionary fiscal policy that raises AD, usually by increasing G, lowering direct tax, or lowering indirect tax.",
+      "Supply Shock": "An event that shifts SRAS, such as imported fuel price rises, damaged infrastructure, or capacity constraints.",
+      "Net Exports": "Exports minus imports. For New Zealand, dairy, tourism, education, and other export markets can have large effects on NX."
+    };
+
+    const els = {
+      directTax: document.getElementById("directTax"),
+      indirectTax: document.getElementById("indirectTax"),
+      serviceSpend: document.getElementById("serviceSpend"),
+      infraSpend: document.getElementById("infraSpend"),
+      directTaxOut: document.getElementById("directTaxOut"),
+      indirectTaxOut: document.getElementById("indirectTaxOut"),
+      serviceSpendOut: document.getElementById("serviceSpendOut"),
+      infraSpendOut: document.getElementById("infraSpendOut"),
+      previewBalance: document.getElementById("previewBalance"),
+      previewText: document.getElementById("previewText"),
+      decisionLabel: document.getElementById("decisionLabel"),
+      commitButton: document.getElementById("commitButton"),
+      resetButton: document.getElementById("resetButton"),
+      startButton: document.getElementById("startButton"),
+      intro: document.getElementById("intro"),
+      mandateStatus: document.getElementById("mandateStatus")
+    };
+
+    let history = [];
+    let selectedTerm = "Aggregate Demand (AD)";
+
+    function qLabel(index) {
+      const year = Math.floor(index / 4) + 1;
+      const quarter = index % 4 + 1;
+      return `Y${year} Q${quarter}`;
+    }
+
+    function shortQ(index) {
+      return `Q${index % 4 + 1}`;
+    }
+
+    function money(value) {
+      const sign = value < 0 ? "-" : "";
+      return `${sign}$${Math.abs(value).toFixed(1)}b`;
+    }
+
+    function pct(value) {
+      return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+    }
+
+    function points(value) {
+      return `${value > 0 ? "+" : ""}${value.toFixed(1)} pts`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function gapPct(output) {
+      return ((output - potentialOutput) / potentialOutput) * 100;
+    }
+
+    function srasPrice(output, srasShift) {
+      const spareCapacity = Math.max(0, output - 78);
+      const capacityPressure = Math.max(0, output - 88);
+      const nearLras = Math.max(0, output - 96);
+      const beyondLras = Math.max(0, output - potentialOutput);
+      return 90.8 + srasShift +
+        0.006 * spareCapacity +
+        0.0020 * spareCapacity * spareCapacity +
+        0.016 * capacityPressure * capacityPressure +
+        0.084 * nearLras * nearLras +
+        1.05 * beyondLras * beyondLras +
+        0.18 * beyondLras * beyondLras * beyondLras;
+    }
+
+    function adPrice(output, adLevel) {
+      const distanceFromLeft = Math.max(0, output - 76);
+      const flattening = 1 - Math.exp(-0.075 * distanceFromLeft);
+      const bottomTail = Math.max(0, output - 104);
+      return adLevel + 10.8 - 18.0 * flattening - 0.015 * bottomTail;
+    }
+
+    function solveEquilibrium(adLevel, srasShift) {
+      let best = { output: 100, price: srasPrice(100, srasShift), diff: Infinity };
+      for (let output = 76; output <= 121; output += 0.05) {
+        const demandPrice = adPrice(output, adLevel);
+        const supplyPrice = srasPrice(output, srasShift);
+        const diff = Math.abs(demandPrice - supplyPrice);
+        if (diff < best.diff) {
+          best = { output, price: supplyPrice, diff };
+        }
+      }
+      return best;
+    }
+
+    function fiscalImpulse(prev, policy) {
+      const directTaxChangeBillions = (policy.directTaxRate - prev.directTaxRate) * prev.output;
+      const indirectTaxChangeBillions = (policy.indirectTaxRate - prev.indirectTaxRate) * prev.output;
+      const serviceChange = policy.serviceSpend - prev.serviceSpend;
+      const infraChange = policy.infraSpend - prev.infraSpend;
+      return serviceChange * 1.12 + infraChange * 0.86 - directTaxChangeBillions * 0.92 - indirectTaxChangeBillions * 0.62;
+    }
+
+    function policyStanceImpulse(prev, policy) {
+      const serviceStance = policy.serviceSpend - neutralServiceSpend;
+      const infraStance = policy.infraSpend - neutralInfraSpend;
+      const directTaxStanceBillions = (policy.directTaxRate - neutralDirectTaxRate) * prev.output;
+      const indirectTaxStanceBillions = (policy.indirectTaxRate - neutralIndirectTaxRate) * prev.output;
+      return serviceStance * 0.36 + infraStance * 0.24 - directTaxStanceBillions * 0.31 - indirectTaxStanceBillions * 0.22;
+    }
+
+    function taxMixPricePressure(prev, policy) {
+      const indirectChange = (policy.indirectTaxRate - prev.indirectTaxRate) * 100;
+      const directChange = (policy.directTaxRate - prev.directTaxRate) * 100;
+      const indirectStance = (policy.indirectTaxRate - neutralIndirectTaxRate) * 100;
+      return indirectChange * 0.34 + indirectStance * 0.08 - Math.max(0, directChange) * 0.03;
+    }
+
+    function infrastructureSupplyEffect(prev, policy) {
+      const infraChange = policy.infraSpend - prev.infraSpend;
+      const infraStance = policy.infraSpend - neutralInfraSpend;
+      return clamp(-infraChange * 0.08 - infraStance * 0.05, -1.0, 0.6);
+    }
+
+    function naturalAdjustment(prev) {
+      const gap = gapPct(prev.output);
+      const demandRecovery = clamp(-gap * 0.13, -1.2, 1.8);
+      const demandDrift = (baselineAdLevel - prev.adLevel) * 0.055;
+      return demandRecovery + demandDrift;
+    }
+
+    function deriveComponents(output, policy, shock, inflationPressure) {
+      const directTaxGap = policy.directTaxRate - neutralDirectTaxRate;
+      const indirectTaxGap = policy.indirectTaxRate - neutralIndirectTaxRate;
+      let consumption = 58 + 0.52 * (output - potentialOutput) - directTaxGap * 92 - indirectTaxGap * 150 + shock.c;
+      let investment = 22 + 0.18 * (output - potentialOutput) - directTaxGap * 34 + shock.i - Math.max(0, inflationPressure - 2) * 0.16;
+      let netExports = -3 - 0.07 * (output - potentialOutput) + shock.nx;
+      const government = policy.govSpend;
+      const residual = output - (consumption + investment + government + netExports);
+      consumption += residual * 0.72;
+      investment += residual * 0.16;
+      netExports += residual * 0.12;
+      return { consumption, investment, government, netExports };
+    }
+
+    function baseline() {
+      const price = srasPrice(100, 0);
+      const directTaxRate = neutralDirectTaxRate;
+      const indirectTaxRate = neutralIndirectTaxRate;
+      const taxRate = directTaxRate + indirectTaxRate;
+      const serviceSpend = neutralServiceSpend;
+      const infraSpend = neutralInfraSpend;
+      const govSpend = serviceSpend + infraSpend;
+      const taxRevenue = taxRate * 100;
+      return {
+        index: 0,
+        label: qLabel(0),
+        output: 100,
+        price,
+        growth: 0,
+        inflation: 0,
+        gap: 0,
+        gapPct: 0,
+        adLevel: baselineAdLevel,
+        prevAdLevel: baselineAdLevel,
+        srasShift: 0,
+        prevSrasShift: 0,
+        directTaxRate,
+        indirectTaxRate,
+        taxRate,
+        serviceSpend,
+        infraSpend,
+        govSpend,
+        taxRevenue,
+        balance: taxRevenue - govSpend,
+        deficit: govSpend - taxRevenue,
+        consumption: 58,
+        investment: 22,
+        government: govSpend,
+        netExports: -3,
+        shock: shocks[0],
+        fiscalImpulse: 0,
+        changeImpulse: 0,
+        stanceImpulse: 0,
+        adjustmentImpulse: 0,
+        fiscalMultiplier: 0.46,
+        shockAdImpact: 0,
+        shockSrasImpact: 0,
+        taxPriceImpact: 0,
+        infrastructureSupplyImpact: 0
+      };
+    }
+
+    function resetSimulation() {
+      history = [baseline()];
+      els.directTax.value = (neutralDirectTaxRate * 100).toFixed(1);
+      els.indirectTax.value = (neutralIndirectTaxRate * 100).toFixed(1);
+      els.serviceSpend.value = neutralServiceSpend.toFixed(1);
+      els.infraSpend.value = neutralInfraSpend.toFixed(1);
+      render();
+    }
+
+    function currentPolicy() {
+      const directTaxRate = Number(els.directTax.value) / 100;
+      const indirectTaxRate = Number(els.indirectTax.value) / 100;
+      return {
+        directTaxRate,
+        indirectTaxRate,
+        taxRate: directTaxRate + indirectTaxRate,
+        serviceSpend: Number(els.serviceSpend.value),
+        infraSpend: Number(els.infraSpend.value),
+        govSpend: Number(els.serviceSpend.value) + Number(els.infraSpend.value)
+      };
+    }
+
+    function preview() {
+      const prev = history[history.length - 1];
+      const policy = currentPolicy();
+      const taxRevenue = policy.taxRate * prev.output;
+      const balance = taxRevenue - policy.govSpend;
+      const deficit = policy.govSpend - taxRevenue;
+      return { taxRevenue, balance, deficit, policy };
+    }
+
+    function applyQuarter() {
+      if (history.length >= totalQuarters) return;
+
+      const prev = history[history.length - 1];
+      const nextIndex = history.length;
+      const shock = shocks[nextIndex] || shocks[shocks.length - 1];
+      const policy = currentPolicy();
+      const changeImpulse = fiscalImpulse(prev, policy);
+      const stanceImpulse = policyStanceImpulse(prev, policy);
+      const adjustmentImpulse = naturalAdjustment(prev);
+      const impulse = changeImpulse + stanceImpulse + adjustmentImpulse;
+      const prevAdLevel = prev.adLevel;
+      const prevSrasShift = prev.srasShift;
+      const prevGapPct = gapPct(prev.output);
+      const fiscalMultiplier = clamp(0.46 + Math.max(0, -prevGapPct) * 0.018 - Math.max(0, shock.srasShift) * 0.025, 0.34, 0.68);
+      const shockAdImpact = shock.adShift * 1.18;
+      const shockSrasImpact = shock.srasShift * 1.22;
+      const taxPriceImpact = taxMixPricePressure(prev, policy);
+      const infrastructureSupplyImpact = infrastructureSupplyEffect(prev, policy);
+      const adLevel = prev.adLevel + impulse * fiscalMultiplier + shockAdImpact;
+      const srasShift = clamp(prev.srasShift * 0.28 + shockSrasImpact + taxPriceImpact + infrastructureSupplyImpact, -4, 8);
+      const eq = solveEquilibrium(adLevel, srasShift);
+      const growth = ((eq.output - prev.output) / prev.output) * 100;
+      const inflation = ((eq.price - prev.price) / prev.price) * 100;
+      const components = deriveComponents(eq.output, policy, shock, inflation);
+      const taxRevenue = policy.taxRate * eq.output;
+      const balance = taxRevenue - policy.govSpend;
+      const deficit = policy.govSpend - taxRevenue;
+
+      history.push({
+        index: nextIndex,
+        label: qLabel(nextIndex),
+        output: eq.output,
+        price: eq.price,
+        growth,
+        inflation,
+        gap: eq.output - potentialOutput,
+        gapPct: gapPct(eq.output),
+        adLevel,
+        prevAdLevel,
+        srasShift,
+        prevSrasShift,
+        directTaxRate: policy.directTaxRate,
+        indirectTaxRate: policy.indirectTaxRate,
+        taxRate: policy.taxRate,
+        serviceSpend: policy.serviceSpend,
+        infraSpend: policy.infraSpend,
+        govSpend: policy.govSpend,
+        taxRevenue,
+        balance,
+        deficit,
+        consumption: components.consumption,
+        investment: components.investment,
+        government: components.government,
+        netExports: components.netExports,
+        shock,
+        fiscalImpulse: impulse,
+        changeImpulse,
+        stanceImpulse,
+        adjustmentImpulse,
+        fiscalMultiplier,
+        shockAdImpact,
+        shockSrasImpact,
+        taxPriceImpact,
+        infrastructureSupplyImpact
+      });
+
+      render();
+    }
+
+    function latest() {
+      return history[history.length - 1];
+    }
+
+    function nextQuarterLabel() {
+      return history.length >= totalQuarters ? "Mandate complete" : qLabel(history.length);
+    }
+
+    function visibleHistory() {
+      return history.slice(Math.max(0, history.length - 4));
+    }
+
+    function drawLineChart(canvas, config) {
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+      const pad = { left: 58, right: 24, top: 24, bottom: 46 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+
+      const min = config.min;
+      const max = config.max;
+      const x = i => pad.left + (config.labels.length <= 1 ? 0 : i / (config.labels.length - 1)) * plotW;
+      const y = value => pad.top + (max - value) / (max - min) * plotH;
+
+      ctx.strokeStyle = "#dce3e3";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "#66727a";
+      ctx.font = "12px Arial";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+
+      const tickStep = config.tickStep || 10;
+      for (let tick = Math.ceil(min / tickStep) * tickStep; tick <= max; tick += tickStep) {
+        const yy = y(tick);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, yy);
+        ctx.lineTo(width - pad.right, yy);
+        ctx.stroke();
+        ctx.fillText(config.axisFormat ? config.axisFormat(tick) : tick.toFixed(0), pad.left - 8, yy);
+      }
+
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, height - pad.bottom);
+      ctx.lineTo(width - pad.right, height - pad.bottom);
+      ctx.stroke();
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillStyle = "#111";
+      config.labels.forEach((label, i) => ctx.fillText(label, x(i), height - pad.bottom + 16));
+
+      function drawSeries(series) {
+        const points = series.values;
+        ctx.strokeStyle = series.color;
+        ctx.lineWidth = series.dashed ? 3 : 4;
+        ctx.setLineDash(series.dashed ? [4, 5] : []);
+        ctx.beginPath();
+        points.forEach((point, i) => {
+          if (point == null) return;
+          const xx = x(i);
+          const yy = y(point);
+          if (i === 0 || points[i - 1] == null) ctx.moveTo(xx, yy);
+          else ctx.lineTo(xx, yy);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        points.forEach((point, i) => {
+          if (point == null) return;
+          ctx.fillStyle = series.color;
+          ctx.beginPath();
+          ctx.arc(x(i), y(point), 6, 0, Math.PI * 2);
+          ctx.fill();
+          if (series.labels !== false) {
+            ctx.fillStyle = "#111";
+            ctx.font = "12px Arial";
+            ctx.textBaseline = point < 0 ? "top" : "bottom";
+            ctx.fillText((series.format || config.valueFormat || (v => v.toFixed(1)))(point), x(i), y(point) - 10);
+          }
+        });
+      }
+
+      config.series.forEach(drawSeries);
+
+      if (config.legend) {
+        let lx = pad.left + 120;
+        const ly = pad.top + 16;
+        ctx.font = "12px Arial";
+        config.legend.forEach(item => {
+          ctx.strokeStyle = item.color;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(lx, ly);
+          ctx.lineTo(lx + 28, ly);
+          ctx.stroke();
+          ctx.fillStyle = "#111";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          ctx.fillText(item.label, lx + 36, ly);
+          lx += 150;
+        });
+      }
+    }
+
+    function drawOutputChart() {
+      const data = visibleHistory();
+      drawLineChart(document.getElementById("outputChart"), {
+        labels: data.map(d => shortQ(d.index)),
+        min: 70,
+        max: 112,
+        tickStep: 10,
+        valueFormat: v => v.toFixed(1),
+        series: [{ color: "#2f80ed", values: data.map(d => d.output) }]
+      });
+    }
+
+    function drawBudgetChart() {
+      const data = visibleHistory();
+      const p = preview();
+      const labels = data.map(d => shortQ(d.index)).concat(history.length >= totalQuarters ? [] : ["Future"]);
+      const actualTax = data.map(d => d.taxRevenue);
+      const actualG = data.map(d => d.govSpend);
+      const previewTax = Array(data.length - 1).fill(null).concat([actualTax[actualTax.length - 1], p.taxRevenue]);
+      const previewG = Array(data.length - 1).fill(null).concat([actualG[actualG.length - 1], p.policy.govSpend]);
+      drawLineChart(document.getElementById("budgetChart"), {
+        labels,
+        min: 15,
+        max: 38,
+        tickStep: 5,
+        valueFormat: v => v.toFixed(1),
+        series: [
+          { color: "#2f80ed", values: actualTax, format: v => v.toFixed(1) },
+          { color: "#f4a340", values: actualG, format: v => v.toFixed(1) },
+          { color: "#2f80ed", values: previewTax, dashed: true, format: v => v.toFixed(1) },
+          { color: "#f4a340", values: previewG, dashed: true, format: v => v.toFixed(1) }
+        ],
+        legend: [
+          { color: "#2f80ed", label: "Tax revenue" },
+          { color: "#f4a340", label: "Spending (G)" }
+        ]
+      });
+    }
+
+    function drawComponentCharts() {
+      const data = visibleHistory();
+      const labels = data.map(d => shortQ(d.index));
+      const charts = [
+        ["cChart", "consumption", "#2f80ed", 40, 72, 10],
+        ["iChart", "investment", "#6a55a8", 12, 30, 5],
+        ["gChart", "government", "#f4a340", 18, 33, 5],
+        ["nxChart", "netExports", "#11824d", -10, 6, 2]
+      ];
+      charts.forEach(([id, key, color, min, max, tickStep]) => {
+        drawLineChart(document.getElementById(id), {
+          labels,
+          min,
+          max,
+          tickStep,
+          valueFormat: v => v.toFixed(1),
+          series: [{ color, values: data.map(d => d[key]) }]
+        });
+      });
+    }
+
+    function drawAdasChart() {
+      const d = latest();
+      const canvas = document.getElementById("adasChart");
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+      const pad = { left: 72, right: 48, top: 34, bottom: 64 };
+      const xMin = 76;
+      const xMax = 121;
+      const yMin = 84;
+      const yMax = 132;
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      const x = value => pad.left + (value - xMin) / (xMax - xMin) * plotW;
+      const y = value => pad.top + (yMax - value) / (yMax - yMin) * plotH;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = "#dce3e3";
+      ctx.lineWidth = 1;
+      ctx.font = "12px Arial";
+      ctx.fillStyle = "#68757c";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let py = 90; py <= 130; py += 5) {
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y(py));
+        ctx.lineTo(width - pad.right, y(py));
+        ctx.stroke();
+        ctx.fillText(py.toString(), pad.left - 8, y(py));
+      }
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      for (let oy = 80; oy <= 120; oy += 10) {
+        ctx.beginPath();
+        ctx.moveTo(x(oy), height - pad.bottom);
+        ctx.lineTo(x(oy), height - pad.bottom + 5);
+        ctx.stroke();
+        ctx.fillText(oy.toString(), x(oy), height - pad.bottom + 14);
+      }
+
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, height - pad.bottom);
+      ctx.lineTo(width - pad.right, height - pad.bottom);
+      ctx.stroke();
+
+      ctx.fillStyle = "#111";
+      ctx.font = "14px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Real output", pad.left + plotW / 2, height - 24);
+      ctx.save();
+      ctx.translate(22, pad.top + plotH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("Price level", 0, 0);
+      ctx.restore();
+
+      function curve(fn, color, dashed, widthLine) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = widthLine;
+        ctx.setLineDash(dashed ? [8, 7] : []);
+        ctx.beginPath();
+        let drawing = false;
+        for (let output = xMin; output <= xMax; output += 0.25) {
+          const price = fn(output);
+          if (price < yMin || price > yMax) {
+            drawing = false;
+            continue;
+          }
+          const xx = x(output);
+          const yy = y(price);
+          if (!drawing) {
+            ctx.moveTo(xx, yy);
+            drawing = true;
+          }
+          else ctx.lineTo(xx, yy);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      if (history.length > 1) {
+        curve(output => adPrice(output, d.prevAdLevel), "#2f80ed", true, 3);
+        curve(output => srasPrice(output, d.prevSrasShift), "#c63732", true, 3);
+      }
+
+      curve(output => adPrice(output, d.adLevel), "#2f80ed", false, 4);
+      curve(output => srasPrice(output, d.srasShift), "#c63732", false, 4);
+
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(x(potentialOutput), pad.top);
+      ctx.lineTo(x(potentialOutput), height - pad.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const eqX = x(d.output);
+      const eqY = y(d.price);
+      ctx.strokeStyle = "#555";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(pad.left, eqY);
+      ctx.lineTo(eqX, eqY);
+      ctx.lineTo(eqX, height - pad.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#111";
+      ctx.font = "13px Arial";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`PL = ${d.price.toFixed(1)}`, pad.left - 10, eqY);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(`Y = ${d.output.toFixed(1)}`, eqX, height - pad.bottom + 32);
+
+      ctx.fillStyle = "#111";
+      ctx.beginPath();
+      ctx.arc(eqX, eqY, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      const currentGapPct = d.gapPct ?? gapPct(d.output);
+      const gapColor = currentGapPct < -1 ? "#c63732" : currentGapPct > 1 ? "#a96e12" : "#11824d";
+      ctx.strokeStyle = gapColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(eqX, height - pad.bottom + 35);
+      ctx.lineTo(x(potentialOutput), height - pad.bottom + 35);
+      ctx.stroke();
+      ctx.fillStyle = gapColor;
+      ctx.font = "12px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(`Output gap ${pct(currentGapPct)}`, (eqX + x(potentialOutput)) / 2, height - pad.bottom + 31);
+
+      ctx.fillStyle = "#111";
+      ctx.font = "13px Arial";
+      ctx.textAlign = "left";
+      const adLabelPrice = clamp(adPrice(111, d.adLevel), yMin + 2, yMax - 2);
+      const srasLabelPrice = clamp(srasPrice(106, d.srasShift), yMin + 2, yMax - 2);
+      ctx.fillText("AD", x(111), y(adLabelPrice) - 10);
+      ctx.fillText("SRAS", x(106), y(srasLabelPrice) - 10);
+      ctx.fillText("LRAS", x(potentialOutput) + 7, pad.top + 16);
+      ctx.fillText("Equilibrium", eqX + 10, eqY - 10);
+
+      ctx.fillStyle = "#5f6b73";
+      ctx.font = "12px Arial";
+      ctx.fillText("Flat SRAS: output responds strongly", x(79), y(srasPrice(84, d.srasShift)) + 28);
+      ctx.fillText("Capacity wall near/past LRAS: prices rise quickly", x(98), y(srasPrice(103, d.srasShift)) - 26);
+    }
+
+    function setMetric(id, value, note, tone) {
+      document.getElementById(`${id}Value`).textContent = value;
+      const noteEl = document.getElementById(`${id}Note`);
+      noteEl.textContent = note;
+      noteEl.className = `note ${tone}`;
+    }
+
+    function zoneInfo(d) {
+      const gap = d.gapPct ?? gapPct(d.output);
+      if (gap < -5) {
+        return {
+          title: "Large recessionary gap",
+          text: `Output is ${Math.abs(gap).toFixed(1)}% below potential. AD intersects SRAS on the flatter section, so expansionary fiscal policy is likely to raise output more than prices.`,
+          tone: "risk"
+        };
+      }
+      if (gap < -1) {
+        return {
+          title: "Small recessionary gap",
+          text: `Output is ${Math.abs(gap).toFixed(1)}% below potential. The economy is closer to capacity, so extra AD still raises output but inflation pressure starts to matter.`,
+          tone: "watch"
+        };
+      }
+      if (gap > 1) {
+        return {
+          title: "Inflationary gap",
+          text: `Output is ${gap.toFixed(1)}% above potential. AD is beyond LRAS, so extra expansionary fiscal policy is likely to raise prices more than real output.`,
+          tone: "risk"
+        };
+      }
+      return {
+        title: "Close to LRAS",
+        text: `Output is within ${Math.abs(gap).toFixed(1)}% of potential. A balanced fiscal stance keeps output stable and limits inflation pressure.`,
+        tone: "good"
+      };
+    }
+
+    function renderTimeline() {
+      const currentIndex = history.length >= totalQuarters ? totalQuarters - 1 : history.length;
+      const fillPct = (currentIndex / (totalQuarters - 1)) * 100;
+      document.getElementById("trackFill").style.width = `${fillPct}%`;
+      document.getElementById("trackThumb").style.left = `${fillPct}%`;
+      const labels = document.getElementById("quarterLabels");
+      labels.innerHTML = "";
+      for (let i = 0; i < totalQuarters; i++) {
+        const span = document.createElement("span");
+        span.textContent = shortQ(i);
+        if (i === currentIndex) span.className = "active";
+        labels.appendChild(span);
+      }
+    }
+
+    function renderControls() {
+      const p = preview();
+      const next = nextQuarterLabel();
+      els.directTaxOut.textContent = `${Number(els.directTax.value).toFixed(1)}% of GDP`;
+      els.indirectTaxOut.textContent = `${Number(els.indirectTax.value).toFixed(1)}% of GDP`;
+      els.serviceSpendOut.textContent = `$${Number(els.serviceSpend.value).toFixed(1)}b`;
+      els.infraSpendOut.textContent = `$${Number(els.infraSpend.value).toFixed(1)}b`;
+      els.decisionLabel.textContent = history.length >= totalQuarters ? "Mandate complete" : `Policy for ${next}`;
+      els.previewBalance.textContent = money(p.balance);
+      els.previewBalance.className = `preview-number ${p.balance >= 0 ? "good" : p.balance > -3 ? "watch" : "risk"}`;
+      els.previewText.textContent = p.balance >= 0
+        ? "Projected surplus before output, prices, and tax revenue react."
+        : "Projected deficit before output, prices, and tax revenue react.";
+      els.commitButton.disabled = history.length >= totalQuarters;
+      els.commitButton.textContent = history.length >= totalQuarters ? "Mandate complete" : "OK - set policy";
+      els.mandateStatus.textContent = history.length >= totalQuarters
+        ? "Mandate complete: 16 quarters played"
+        : `Mandate: ${next} of 16`;
+    }
+
+    function renderMetrics() {
+      const d = latest();
+      setMetric(
+        "growth",
+        pct(d.growth),
+        d.growth >= 0 ? "positive growth" : "negative growth",
+        d.growth >= 1 ? "good" : d.growth >= 0 ? "watch" : "risk"
+      );
+      setMetric(
+        "balance",
+        money(d.balance),
+        d.balance >= 0 ? "surplus" : "deficit",
+        d.balance >= 0 ? "good" : d.balance > -3 ? "watch" : "risk"
+      );
+      setMetric(
+        "inflation",
+        pct(d.inflation),
+        d.inflation > 2.5 ? "high pressure" : d.inflation < -0.5 ? "falling prices" : "moderate pressure",
+        d.inflation <= 2.5 && d.inflation >= -0.5 ? "good" : d.inflation <= 4 ? "watch" : "risk"
+      );
+      setMetric(
+        "gap",
+        pct(d.gapPct ?? gapPct(d.output)),
+        (d.gapPct ?? gapPct(d.output)) < -1 ? "recessionary gap" : (d.gapPct ?? gapPct(d.output)) > 1 ? "inflationary gap" : "near LRAS",
+        Math.abs(d.gapPct ?? gapPct(d.output)) <= 1 ? "good" : Math.abs(d.gapPct ?? gapPct(d.output)) <= 5 ? "watch" : "risk"
+      );
+    }
+
+    function renderNews() {
+      const d = latest();
+      const z = zoneInfo(d);
+      document.getElementById("macroKicker").textContent = d.label;
+      document.getElementById("macroHeadline").textContent = d.shock.headline;
+      document.getElementById("macroLead").textContent =
+        history.length === 1
+          ? "The government is preparing its first quarterly fiscal decision."
+          : `${d.shock.detail} Real GDP growth was ${pct(d.growth)} and the output gap is ${pct(d.gapPct ?? gapPct(d.output))}.`;
+      document.getElementById("macroDetail").textContent =
+        d.shock.isShock
+          ? `${z.title}: ${z.text} Shock shift: AD ${points(d.shockAdImpact)}, SRAS ${points(d.shockSrasImpact)}.`
+          : `${z.title}: ${z.text} No new shock this quarter; policy stance ${points(d.stanceImpulse)} and natural adjustment ${points(d.adjustmentImpulse)} drove the movement.`;
+
+      document.getElementById("fiscalHeadline").textContent =
+        d.balance >= 0 ? "Operating surplus recorded" : d.deficit > 4 ? "Deficit widens as policy bites" : "Government keeps running deficits";
+      document.getElementById("fiscalLead").textContent =
+        `Tax revenue was ${money(d.taxRevenue)} and government spending was ${money(d.govSpend)}: public services ${money(d.serviceSpend)} and infrastructure ${money(d.infraSpend)}.`;
+      document.getElementById("fiscalDetail").textContent =
+        d.balance >= 0
+          ? "Fiscal space has improved, but too much contraction can weaken AD."
+          : "The deficit may support demand, but persistent deficits increase fiscal pressure.";
+    }
+
+    function renderAdasText() {
+      const d = latest();
+      const z = zoneInfo(d);
+      document.getElementById("zoneTitle").textContent = z.title;
+      document.getElementById("zoneText").textContent = z.text;
+      document.getElementById("fiscalChannel").textContent =
+        d.fiscalImpulse >= 0
+          ? `Fiscal settings shifted AD right by about ${money(d.fiscalImpulse)} this quarter: policy change ${points(d.changeImpulse)}, ongoing stance ${points(d.stanceImpulse)}, natural adjustment ${points(d.adjustmentImpulse)}. Indirect tax changed SRAS/price pressure by ${points(d.taxPriceImpact)}; infrastructure changed SRAS by ${points(d.infrastructureSupplyImpact)}.`
+          : `Fiscal settings shifted AD left by about ${money(Math.abs(d.fiscalImpulse))} this quarter: policy change ${points(d.changeImpulse)}, ongoing stance ${points(d.stanceImpulse)}, natural adjustment ${points(d.adjustmentImpulse)}. Indirect tax changed SRAS/price pressure by ${points(d.taxPriceImpact)}; infrastructure changed SRAS by ${points(d.infrastructureSupplyImpact)}.`;
+      document.getElementById("shockChannel").textContent =
+        d.shock.isShock
+          ? `${d.shock.headline}: ${d.shock.detail} Shock impact: AD ${points(d.shockAdImpact)}, SRAS ${points(d.shockSrasImpact)}.`
+          : `${d.shock.headline}: ${d.shock.detail} Shock impact: AD ${points(d.shockAdImpact)}, SRAS ${points(d.shockSrasImpact)}. This is a policy-effect quarter rather than a new shock quarter.`;
+      document.getElementById("assessmentLink").textContent =
+        (d.gapPct ?? gapPct(d.output)) < -5
+          ? "In an assessment, this is the case where expansionary fiscal policy can close a recessionary gap with little extra inflation."
+          : (d.gapPct ?? gapPct(d.output)) > -1
+            ? "In an assessment, explain that the steeper SRAS makes the same AD increase create more inflation pressure."
+            : "In an assessment, identify the recessionary gap and explain the intended AD shift.";
+    }
+
+    function renderGlossary() {
+      const list = document.getElementById("termList");
+      list.innerHTML = "";
+      Object.keys(glossary).forEach(term => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "term";
+        button.setAttribute("aria-pressed", String(term === selectedTerm));
+        button.textContent = term;
+        button.addEventListener("click", () => {
+          selectedTerm = term;
+          renderGlossary();
+        });
+        list.appendChild(button);
+      });
+      document.getElementById("definition").innerHTML = `<strong>${selectedTerm}</strong><br><br>${glossary[selectedTerm]}`;
+    }
+
+    function render() {
+      renderTimeline();
+      renderControls();
+      renderMetrics();
+      renderNews();
+      renderAdasText();
+      renderGlossary();
+      drawOutputChart();
+      drawBudgetChart();
+      drawComponentCharts();
+      drawAdasChart();
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", "false"));
+        document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+        tab.setAttribute("aria-selected", "true");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+        render();
+      });
+    });
+
+    els.directTax.addEventListener("input", render);
+    els.indirectTax.addEventListener("input", render);
+    els.serviceSpend.addEventListener("input", render);
+    els.infraSpend.addEventListener("input", render);
+    els.commitButton.addEventListener("click", applyQuarter);
+    els.resetButton.addEventListener("click", resetSimulation);
+    els.startButton.addEventListener("click", () => {
+      els.intro.hidden = true;
+    });
+
+    resetSimulation();
+  </script>
+</body>
+</html>
